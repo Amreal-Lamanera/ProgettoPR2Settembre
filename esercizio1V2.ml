@@ -21,7 +21,7 @@ and eval =
 | String of string
 | Unbound
 
-and efun = ide * exp * env
+and efun = exp * env
 
 (* Ambiente - lista di bindings (coppie <nome, valore>) *)
 and env = ( ide * eval ) list
@@ -158,10 +158,10 @@ Ide (ide) -> lookup(ide, r)
 
 | Let (i, e1, e2) -> sem (e2, (i, sem (e1, r)) :: r)
 
-| Fun (x, a) -> Funval (x, a, r)
+| Fun (x, a) -> Funval (e, r)
 
 | Appl (e, param) -> (match sem (e, r) with
-                              Funval ( x, code , funDecEnv ) -> sem ( code, ( x, sem (param,r) ) :: funDecEnv )
+                              Funval ( Fun (x, code) , funDecEnv ) -> sem ( code, ( x, sem (param,r) ) :: funDecEnv )
                             | _ -> failwith ("Apply argument 1 must be a functional value"))
 
 (* Operazioni su Tuple *)
@@ -224,9 +224,9 @@ Ide (ide) -> lookup(ide, r)
                           Tuple t -> let f1 = sem (f, r) in
                             let rec funAppl ((t: tuple), (f1: eval)) = (
                                 match (t, f1) with
-                                      E (e), Funval (x, Fun (x1, exp), r1) ->
+                                      E (e), Funval (Fun (x1, exp), r1) ->
                                         E (sem (exp, ((x1, e) :: r1)))
-                                    | Elts (e, eList), Funval (x, Fun (x1, exp), r1) ->
+                                    | Elts (e, eList), Funval (Fun (x1, exp), r1) ->
                                         Elts (sem (exp, ((x1, e) :: r1)), funAppl (eList, f1))
                                     | _ -> failwith "Type Error"
                                 ) in Tuple (funAppl (t, f1))
